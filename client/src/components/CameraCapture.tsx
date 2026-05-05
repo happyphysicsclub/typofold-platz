@@ -208,18 +208,26 @@ export const CameraCapture = ({ onCapture, onClose }: Props) => {
     setTimeout(() => setFlash(false), 250)
 
     const src = canvasRef.current!
-    const CROP = 0.075 // CSS minWidth 115%와 동일하게 양쪽 7.5% 크롭
-    const cx = Math.round(src.width * CROP)
-    const cy = Math.round(src.height * CROP)
-    const outW = src.width - cx * 2
-    const outH = src.height - cy * 2
+    const minDim = Math.min(src.width, src.height)
+    const cx = Math.round((src.width - minDim) / 2)
+    const cy = Math.round((src.height - minDim) / 2)
 
     const tmp = document.createElement('canvas')
-    tmp.width = outW
-    tmp.height = outH
-    tmp.getContext('2d')!.drawImage(src, cx, cy, outW, outH, 0, 0, outW, outH)
+    tmp.width = minDim
+    tmp.height = minDim
+    const ctx = tmp.getContext('2d')!
+    ctx.drawImage(src, cx, cy, minDim, minDim, 0, 0, minDim, minDim)
+
+    const r = minDim / 2
+    const grad = ctx.createRadialGradient(r, r, r * 0.82, r, r, r)
+    grad.addColorStop(0, 'rgba(0,0,0,0)')
+    grad.addColorStop(0.55, 'rgba(0,0,0,0.55)')
+    grad.addColorStop(1.0, 'rgba(0,0,0,1)')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, minDim, minDim)
+
     tmp.toBlob((blob) => {
-      if (blob) onCapture(blob, outW, outH)
+      if (blob) onCapture(blob, minDim, minDim)
     }, 'image/webp', 0.92)
   }
 
@@ -230,7 +238,16 @@ export const CameraCapture = ({ onCapture, onClose }: Props) => {
       <canvas
         ref={canvasRef}
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
-        style={{ minWidth: '115%', minHeight: '115%', width: 'auto', height: 'auto' }}
+        style={{ minWidth: '100%', minHeight: '100%', width: 'auto', height: 'auto' }}
+      />
+
+      {/* 원형 비네팅 오버레이 */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle closest-side at 50% 50%, transparent 0%, transparent 82%, rgba(0,0,0,0.55) 91%, rgba(0,0,0,1) 100%)',
+          zIndex: 2,
+        }}
       />
 
       {/* 셔터 플래시 */}

@@ -13,4 +13,5 @@ export type Photo = {
   uploaded_at: string
   width: number | null
   height: number | null
+  hidden: boolean | null
 }

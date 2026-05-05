@@ -19,7 +19,11 @@ export default function GalleryPage() {
     let active = true
 
     async function load() {
-      const { data, error } = await supabase.from('photos').select('*').order('uploaded_at', { ascending: false })
+      const { data, error } = await supabase
+        .from('photos')
+        .select('*')
+        .not('hidden', 'eq', true)
+        .order('uploaded_at', { ascending: false })
 
       if (!active) return
       if (!error && data) setPhotos(data as Photo[])
