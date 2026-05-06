@@ -47,10 +47,10 @@ export default function GalleryPage() {
   }
 
   return (
-    <div className='min-h-screen pb-32'>
+    <div className='min-h-screen pb-32 p-2'>
       {/* Header */}
-      <header className='top-0 z-40 bg-background px-2 h-14 flex items-center'>
-        <span className='font-bold text-sm tracking-widest uppercase'>Typofold</span>
+      <header className='px-1 h-12 flex items-center mb-2'>
+        <span className='font-bold text-base tracking-widest uppercase'>Typofold</span>
       </header>
 
       {/* Gallery */}
@@ -64,56 +64,55 @@ export default function GalleryPage() {
           <p className='text-gray/50 text-xs'>아래 버튼으로 첫 사진을 찍어보세요.</p>
         </div>
       ) : (
-        <div className='columns-2 sm:columns-3 lg:columns-4 gap-1 p-1'>
+        <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 bg-black p-4'>
           {photos.map((photo) => (
-            <div
-              key={photo.id}
-              className='break-inside-avoid mb-1 w-full h-fit cursor-pointer group relative overflow-hidden  flex flex-col justify-center items-center'
-              onClick={() => setSelectedPhoto(photo)}>
-              <img
-                src={photo.public_url}
-                alt={photo.caption ?? ''}
-                className='w-full h-auto object-center object-cover group-hover:scale-[1.03] transition-transform duration-500'
-                loading='lazy'
-              />
-              {photo.caption && (
-                <div className='absolute top-0 left-0 right-0 w-fit bg-background text-black text-xs px-2 py-1.5'>
-                  {photo.caption}
-                </div>
-              )}
-              {photo.uploaded_at && (
-                <div className='w-full pl-1 text-black text-[10px] mt-1'>
-                  {new Date(photo.uploaded_at).toLocaleString('ko-KR', {
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </div>
-              )}
+            <div key={photo.id} className='cursor-pointer group flex flex-col' onClick={() => setSelectedPhoto(photo)}>
+              <div className='relative w-full aspect-square overflow-hidden'>
+                <Image
+                  src={photo.public_url}
+                  alt={photo.caption ?? ''}
+                  fill
+                  sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
+                  className='object-cover object-center group-hover:scale-[1.03] transition-transform duration-500'
+                />
+                {photo.caption && (
+                  <div className='absolute top-0 left-0 w-fit text-white text-sm px-1.5 py-1.5'>☻ {photo.caption}</div>
+                )}
+                {photo.uploaded_at && (
+                  <div className='text-[10px] p-1.5 text-right absolute bottom-0 font-mono right-0 text-orange-300/90'>
+                    {new Date(photo.uploaded_at).toLocaleString('en-US', {
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
       )}
 
       {/* FAB */}
-      <button
-        onClick={() => setShowCamera(true)}
-        className='fixed bottom-10 left-1/2 -translate-x-1/2 z-30 w-fit px-6 h-16 rounded-2xl bg-black text-white shadow-2xl flex flex-row gap-4 items-center justify-center hover:bg-white hover:text-black transition-colors active:scale-95'
-        aria-label='카메라로 찍기'>
-        <svg
-          className='w-6 h-6'
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='1.5'
-          strokeLinecap='round'
-          strokeLinejoin='round'>
-          <path d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z' />
-          <circle cx='12' cy='13' r='4' />
-        </svg>
-        <span className='text-sm font-medium'>내가 만든 타이폴드 사진찍기</span>
-      </button>
+      <div className='fixed bottom-0 left-1/2 -translate-x-1/2 z-30 p-4 w-full px-6 h-fit bg-background backdrop-blur-sm text-black flex flex-row gap-4 items-center justify-center'>
+        <button
+          onClick={() => setShowCamera(true)}
+          aria-label='카메라로 찍기'
+          className='w-14 h-14 rounded-full transition-all flex items-center justify-center border-[1px] cursor-pointer border-black hover:bg-background hover:text-black  active:scale-95 bg-black text-white'>
+          <svg
+            className='w-6 h-6'
+            viewBox='0 0 24 24'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='1.5'
+            strokeLinecap='round'
+            strokeLinejoin='round'>
+            <path d='M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z' />
+            <circle cx='12' cy='13' r='4' />
+          </svg>
+        </button>
+      </div>
 
       {/* 카메라 */}
       {showCamera && <CameraCapture onCapture={handleCapture} onClose={() => setShowCamera(false)} />}

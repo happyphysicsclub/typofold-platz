@@ -76,6 +76,7 @@
       Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR",
       sans-serif;
     background-color: var(--color-background);
+    color: var(--color-black);
   }
 
   ::selection {
