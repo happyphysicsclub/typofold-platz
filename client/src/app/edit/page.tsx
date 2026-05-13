@@ -79,7 +79,9 @@ export default function EditPage() {
     setBusyToggle(photo.id, true)
     const next = !photo.hidden
     const { error } = await supabase.from('photos').update({ hidden: next }).eq('id', photo.id)
-    if (!error) setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, hidden: next } : p)))
+    if (!error) {
+      setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, hidden: next } : p)))
+    }
     setBusyToggle(photo.id, false)
   }
 

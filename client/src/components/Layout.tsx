@@ -14,12 +14,6 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <main className={classNames('w-full min-h-[calc(100vh-4rem)] h-fit relative')}>{children}</main>
-      <footer className='w-full h-16 flex flex-row items-center justify-between px-4 md:px-8'>
-        <span className='text-xs md:text-sm text-left'>
-          © {new Date().getFullYear()} TYPOFOLD.
-          <br className='block md:hidden' /> All rights reserved.
-        </span>
-      </footer>
     </>
   )
 }

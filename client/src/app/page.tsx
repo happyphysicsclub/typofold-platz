@@ -2,10 +2,25 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import BubbleUI from 'react-bubble-ui'
+import 'react-bubble-ui/dist/index.css'
 import { supabase, Photo } from '@/lib/supabase'
 import { CameraCapture } from '@/components/CameraCapture'
 import { CaptionModal } from '@/components/CaptionModal'
 import { Lightbox } from '@/components/Lightbox'
+
+const NUM_COLS = 5
+const GUTTER = 4
+const CORNER_RADIUS = 50
+const PADDING = 16
+
+function calcBubbleSize(width: number) {
+  return Math.floor((width - GUTTER * (NUM_COLS - 1)) / NUM_COLS)
+}
+
+function calcXRadius(width: number, bubbleSize: number) {
+  return Math.floor(width / 2 - bubbleSize / 2 + (CORNER_RADIUS * (1.414 - 1)) / 1.414)
+}
 
 export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -14,6 +29,34 @@ export default function GalleryPage() {
   const [showCamera, setShowCamera] = useState(false)
   const [captured, setCaptured] = useState<{ blob: Blob; width: number; height: number } | null>(null)
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
+  const [viewportWidth, setViewportWidth] = useState(390)
+
+  useEffect(() => {
+    function update() {
+      setViewportWidth(window.innerWidth)
+    }
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+
+  const effectiveWidth = viewportWidth - PADDING * 2
+  const bubbleSize = calcBubbleSize(effectiveWidth)
+  // yRadius ≤ (effectiveWidth/2 - size/2 + cornerRadius*0.293) / 2 ≈ 86
+  // keeps row 0 at positive y so it's visible at scrollTop=0
+  const bubbleOptions = {
+    size: bubbleSize,
+    minSize: Math.floor(bubbleSize * 0.7),
+    gutter: GUTTER,
+    provideProps: false,
+    numCols: NUM_COLS,
+    fringeWidth: 1000,
+    yRadius: 86,
+    xRadius: calcXRadius(effectiveWidth, bubbleSize),
+    cornerRadius: CORNER_RADIUS,
+    compact: true,
+    gravitation: 5,
+  }
 
   useEffect(() => {
     let active = true
@@ -47,9 +90,9 @@ export default function GalleryPage() {
   }
 
   return (
-    <div className='min-h-screen pb-32 p-2'>
+    <div className='min-h-screen'>
       {/* Header */}
-      <header className='px-1 h-12 flex items-center mb-2'>
+      <header className='fixed top-0 left-0 z-20 w-full px-3 h-12 flex items-center'>
         <span className='font-bold text-base tracking-widest uppercase'>Typofold</span>
       </header>
 
@@ -64,42 +107,40 @@ export default function GalleryPage() {
           <p className='text-gray/50 text-xs'>아래 버튼으로 첫 사진을 찍어보세요.</p>
         </div>
       ) : (
-        <div className='grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 bg-black p-4'>
-          {photos.map((photo) => (
-            <div key={photo.id} className='cursor-pointer group flex flex-col' onClick={() => setSelectedPhoto(photo)}>
-              <div className='relative w-full aspect-square overflow-hidden'>
+        <div style={{ overflowX: 'hidden', paddingLeft: PADDING, paddingRight: PADDING, paddingTop: 48 }}>
+          <BubbleUI options={bubbleOptions} style={{ width: '100%', height: 'calc(100dvh - 48px)' }}>
+            {photos.map((photo) => (
+              <div
+                key={photo.id}
+                onClick={() => setSelectedPhoto(photo)}
+                style={{
+                  position: 'relative',
+                  width: bubbleSize,
+                  height: bubbleSize,
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}>
                 <Image
                   src={photo.public_url}
                   alt={photo.caption ?? ''}
                   fill
-                  sizes='(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw'
-                  className='object-cover object-center group-hover:scale-[1.03] transition-transform duration-500'
+                  sizes={`${bubbleSize}px`}
+                  style={{ objectFit: 'cover', transform: 'scale(1.2)' }}
                 />
-                {photo.caption && (
-                  <div className='absolute top-0 left-0 w-fit text-white text-sm px-1.5 py-1.5'>☻ {photo.caption}</div>
-                )}
-                {photo.uploaded_at && (
-                  <div className='text-[10px] p-1.5 text-right absolute bottom-0 font-mono right-0 text-orange-300/90'>
-                    {new Date(photo.uploaded_at).toLocaleString('en-US', {
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
+            ))}
+          </BubbleUI>
         </div>
       )}
 
       {/* FAB */}
-      <div className='fixed bottom-0 left-1/2 -translate-x-1/2 z-30 p-4 w-full px-6 h-fit bg-background backdrop-blur-sm text-black flex flex-row gap-4 items-center justify-center'>
+      <div className='fixed bottom-0 left-1/2 -translate-x-1/2 z-30 p-4 w-full px-6 h-fit text-black flex flex-col gap-1 items-center justify-center'>
         <button
           onClick={() => setShowCamera(true)}
           aria-label='카메라로 찍기'
-          className='w-14 h-14 rounded-full transition-all flex items-center justify-center border-[1px] cursor-pointer border-black hover:bg-background hover:text-black  active:scale-95 bg-black text-white'>
+          className='w-14 h-14 rounded-full transition-all flex items-center justify-center border-[1px] cursor-pointer border-black hover:bg-background hover:text-black active:scale-95 bg-black text-white'>
           <svg
             className='w-6 h-6'
             viewBox='0 0 24 24'
@@ -112,6 +153,7 @@ export default function GalleryPage() {
             <circle cx='12' cy='13' r='4' />
           </svg>
         </button>
+        <span className='text-[10px] text-black/25'>© {new Date().getFullYear()} TYPOFOLD</span>
       </div>
 
       {/* 카메라 */}
