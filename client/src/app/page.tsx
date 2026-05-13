@@ -25,7 +25,6 @@ function calcXRadius(width: number, bubbleSize: number) {
 export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
-  const [version, setVersion] = useState(0)
   const [showCamera, setShowCamera] = useState(false)
   const [captured, setCaptured] = useState<{ blob: Blob; width: number; height: number } | null>(null)
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
@@ -38,6 +37,30 @@ export default function GalleryPage() {
     update()
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
+  }, [])
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('photos-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'photos' }, (payload) => {
+        const photo = payload.new as Photo
+        if (!photo.hidden) setPhotos((prev) => [photo, ...prev])
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'photos' }, (payload) => {
+        setPhotos((prev) => prev.filter((p) => p.id !== (payload.old as Photo).id))
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'photos' }, (payload) => {
+        const photo = payload.new as Photo
+        if (photo.hidden) {
+          setPhotos((prev) => prev.filter((p) => p.id !== photo.id))
+        } else {
+          setPhotos((prev) => prev.map((p) => (p.id === photo.id ? photo : p)))
+        }
+      })
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const effectiveWidth = viewportWidth - PADDING * 2
@@ -65,10 +88,7 @@ export default function GalleryPage() {
   // We run after it (parent) and reset to top.
   useLayoutEffect(() => {
     if (!bubbleRef.current) return
-    const scrollEl = bubbleRef.current
-      .firstElementChild   // BubbleUI outer flex div
-      ?.firstElementChild  // _1Lxpd container
-      ?.firstElementChild  // _2MD0k scrollable
+    const scrollEl = bubbleRef.current.firstElementChild?.firstElementChild?.firstElementChild // BubbleUI outer flex div // _1Lxpd container // _2MD0k scrollable
     if (scrollEl) (scrollEl as HTMLElement).scrollTop = 0
   }, [hasPhotos])
 
@@ -91,7 +111,7 @@ export default function GalleryPage() {
     return () => {
       active = false
     }
-  }, [version])
+  }, [])
 
   const handleCapture = (blob: Blob, width: number, height: number) => {
     setCaptured({ blob, width, height })
@@ -121,7 +141,9 @@ export default function GalleryPage() {
           <p className='text-gray/50 text-xs'>아래 버튼으로 첫 사진을 찍어보세요.</p>
         </div>
       ) : (
-        <div ref={bubbleRef} style={{ overflowX: 'hidden', paddingLeft: PADDING, paddingRight: PADDING, paddingTop: 48 }}>
+        <div
+          ref={bubbleRef}
+          style={{ overflowX: 'hidden', paddingLeft: PADDING, paddingRight: PADDING, paddingTop: 48 }}>
           <BubbleUI options={bubbleOptions} style={{ width: '100%', height: 'calc(100dvh - 48px)' }}>
             {photos.map((photo) => (
               <div
@@ -154,9 +176,10 @@ export default function GalleryPage() {
         <button
           onClick={() => setShowCamera(true)}
           aria-label='카메라로 찍기'
-          className='w-14 h-14 rounded-full transition-all flex items-center justify-center border-[1px] cursor-pointer border-black hover:bg-background hover:text-black active:scale-95 bg-black text-white'>
+          className='w-20 h-20 rounded-full transition-all flex items-center justify-center border-[1px] cursor-pointer border-black hover:bg-background hover:text-black active:scale-95 bg-black text-white'
+          style={{ boxShadow: '0 0 20px 6px rgba(255,255,255,0.7), 0 0 40px 12px rgba(255,255,255,0.3)' }}>
           <svg
-            className='w-6 h-6'
+            className='w-8 h-8'
             viewBox='0 0 24 24'
             fill='none'
             stroke='currentColor'
@@ -182,7 +205,6 @@ export default function GalleryPage() {
           onRetake={handleRetake}
           onUploadComplete={() => {
             setCaptured(null)
-            setVersion((v) => v + 1)
           }}
         />
       )}
