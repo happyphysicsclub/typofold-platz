@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import BubbleUI from 'react-bubble-ui'
 import 'react-bubble-ui/dist/index.css'
@@ -42,8 +42,8 @@ export default function GalleryPage() {
 
   const effectiveWidth = viewportWidth - PADDING * 2
   const bubbleSize = calcBubbleSize(effectiveWidth)
-  // yRadius ≤ (effectiveWidth/2 - size/2 + cornerRadius*0.293) / 2 ≈ 86
-  // keeps row 0 at positive y so it's visible at scrollTop=0
+  // yRadius >= 400: spacer height = calc(50% - (400+34-14.65)px) goes negative → 0
+  // so no empty space above first row
   const bubbleOptions = {
     size: bubbleSize,
     minSize: Math.floor(bubbleSize * 0.7),
@@ -51,12 +51,26 @@ export default function GalleryPage() {
     provideProps: false,
     numCols: NUM_COLS,
     fringeWidth: 1000,
-    yRadius: 86,
+    yRadius: 400,
     xRadius: calcXRadius(effectiveWidth, bubbleSize),
     cornerRadius: CORNER_RADIUS,
     compact: true,
     gravitation: 5,
   }
+
+  const bubbleRef = useRef<HTMLDivElement>(null)
+  const hasPhotos = photos.length > 0
+
+  // BubbleUI forces scroll to center in its useLayoutEffect (child runs first).
+  // We run after it (parent) and reset to top.
+  useLayoutEffect(() => {
+    if (!bubbleRef.current) return
+    const scrollEl = bubbleRef.current
+      .firstElementChild   // BubbleUI outer flex div
+      ?.firstElementChild  // _1Lxpd container
+      ?.firstElementChild  // _2MD0k scrollable
+    if (scrollEl) (scrollEl as HTMLElement).scrollTop = 0
+  }, [hasPhotos])
 
   useEffect(() => {
     let active = true
@@ -107,7 +121,7 @@ export default function GalleryPage() {
           <p className='text-gray/50 text-xs'>아래 버튼으로 첫 사진을 찍어보세요.</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'hidden', paddingLeft: PADDING, paddingRight: PADDING, paddingTop: 48 }}>
+        <div ref={bubbleRef} style={{ overflowX: 'hidden', paddingLeft: PADDING, paddingRight: PADDING, paddingTop: 48 }}>
           <BubbleUI options={bubbleOptions} style={{ width: '100%', height: 'calc(100dvh - 48px)' }}>
             {photos.map((photo) => (
               <div
