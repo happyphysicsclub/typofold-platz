@@ -127,7 +127,9 @@ export const CameraCapture = ({ onCapture, onClose }: Props) => {
       const err = lastErr!
       console.error('[Camera]', err.name, err.message)
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError('카메라 권한이 거부되어 있습니다.\n브라우저 주소창 왼쪽 🔒 아이콘 → 카메라 → 허용 후 새로고침해주세요.')
+        setError(
+          '카메라 권한이 거부되어 있습니다.\n브라우저 주소창 왼쪽 🔒 아이콘 → 카메라 → 허용 후 새로고침해주세요.',
+        )
       } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
         setError('카메라를 찾을 수 없습니다.\n기기에 카메라가 연결되어 있는지 확인해주세요.')
       } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
@@ -226,73 +228,93 @@ export const CameraCapture = ({ onCapture, onClose }: Props) => {
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, minDim, minDim)
 
-    tmp.toBlob((blob) => {
-      if (blob) onCapture(blob, minDim, minDim)
-    }, 'image/webp', 0.92)
+    tmp.toBlob(
+      (blob) => {
+        if (blob) onCapture(blob, minDim, minDim)
+      },
+      'image/webp',
+      0.92,
+    )
   }
 
   return (
-    <div className="fixed inset-0 z-60 overflow-hidden bg-black select-none">
+    <div className='fixed inset-0 z-60 overflow-hidden bg-black select-none'>
       {/* 전체화면 캔버스: CSS cover 트릭으로 화면을 꽉 채움 */}
-      <video ref={videoRef} className="hidden" playsInline muted />
+      <video ref={videoRef} className='hidden' playsInline muted />
       <canvas
         ref={canvasRef}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
         style={{ minWidth: '100%', minHeight: '100%', width: 'auto', height: 'auto' }}
       />
 
       {/* 원형 비네팅 오버레이 */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className='absolute inset-0 pointer-events-none'
         style={{
-          background: 'radial-gradient(circle closest-side at 50% 50%, transparent 0%, transparent 82%, rgba(0,0,0,0.55) 91%, rgba(0,0,0,1) 100%)',
+          background:
+            'radial-gradient(circle closest-side at 50% 50%, transparent 0%, transparent 82%, rgba(0,0,0,0.55) 91%, rgba(0,0,0,1) 100%)',
           zIndex: 2,
         }}
       />
 
       {/* 셔터 플래시 */}
       <div
-        className="absolute inset-0 z-10 bg-white pointer-events-none transition-opacity duration-200"
+        className='absolute inset-0 z-10 bg-white pointer-events-none transition-opacity duration-200'
         style={{ opacity: flash ? 1 : 0 }}
       />
 
       {/* 에러 */}
       {error && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 px-8">
-          <p className="text-white/70 text-sm text-center whitespace-pre-line leading-relaxed">{error}</p>
+        <div className='absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 px-8'>
+          <p className='text-white/70 text-sm text-center whitespace-pre-line leading-relaxed'>{error}</p>
           <button
             onClick={() => startCamera(facingRef.current)}
-            className="text-xs border border-white/30 text-white/60 hover:text-white hover:border-white/60 px-4 py-2 transition-colors"
-          >
+            className='text-xs border border-white/30 text-white/60 hover:text-white hover:border-white/60 px-4 py-2 transition-colors'>
             다시 시도
           </button>
         </div>
       )}
 
       {/* 상단 버튼 */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-4">
-        <button
-          onClick={onClose}
-          className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white text-2xl"
-        >
-          ×
-        </button>
-        <button
-          onClick={handleFlip}
-          className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white text-xl"
-        >
-          ↺
-        </button>
-      </div>
+      <button
+        onClick={onClose}
+        className='absolute top-4 left-4 shadow-2xl bg-background rounded-full w-12 h-12 flex items-center justify-center text-black/75 hover:bg-black hover:text-white transition-all cursor-pointer z-20'>
+        <svg
+          xmlns='http://www.w3.org/2000/svg'
+          fill='none'
+          viewBox='0 0 24 24'
+          strokeWidth={1.5}
+          stroke='currentColor'
+          className='w-6 h-6'>
+          <path strokeLinecap='round' strokeLinejoin='round' d='M6 18L18 6M6 6l12 12' />
+        </svg>
+      </button>
+      <button
+        onClick={handleFlip}
+        className='absolute top-4 right-4 shadow-2xl bg-background rounded-full w-12 h-12 flex items-center justify-center text-black/75 hover:bg-black hover:text-white transition-all cursor-pointer z-20'>
+        {/* reload icon */}
+        <svg
+          xmlns='http://www.w3.org/2000/svg'
+          fill='none'
+          viewBox='0 0 24 24'
+          strokeWidth={1.5}
+          stroke='currentColor'
+          className='w-6 h-6'>
+          <path
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+          />
+        </svg>
+      </button>
 
       {/* 셔터 버튼 */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 h-28 flex items-center justify-center">
+      <div className='absolute bottom-0 left-0 right-0 z-20 h-28 flex items-center justify-center'>
         <button
           onClick={handleCapture}
           disabled={!ready}
-          className="w-18 h-18 rounded-full border-[3px] border-white/70 disabled:opacity-30 active:scale-95 transition-transform flex items-center justify-center"
-        >
-          <div className="w-14 h-14 rounded-full bg-white" />
+          className='w-18 h-18 rounded-full border-[3px] border-white/70 disabled:opacity-30 active:scale-95 transition-transform flex items-center justify-center cursor-pointer'>
+          <div className='w-14 h-14 rounded-full bg-white' />
         </button>
       </div>
     </div>
