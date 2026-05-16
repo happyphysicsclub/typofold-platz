@@ -89,6 +89,7 @@ export const CameraCapture = ({ onCapture, onClose }: Props) => {
   const rafRef = useRef<number>(0)
   const streamRef = useRef<MediaStream | null>(null)
   const facingRef = useRef<'user' | 'environment'>('environment')
+  const mirrorRef = useRef<boolean>(false)
   const [ready, setReady] = useState(false)
   const [flash, setFlash] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -142,6 +143,8 @@ export const CameraCapture = ({ onCapture, onClose }: Props) => {
 
     streamRef.current = stream
     facingRef.current = facing
+    const actualFacing = stream.getVideoTracks()[0]?.getSettings().facingMode
+    mirrorRef.current = actualFacing !== 'environment'
     const video = videoRef.current!
     video.pause()
     video.srcObject = stream
@@ -187,7 +190,7 @@ export const CameraCapture = ({ onCapture, onClose }: Props) => {
       }
 
       gl.uniform1f(uAspect, vw / vh)
-      gl.uniform1f(uMirror, facingRef.current === 'user' ? 1.0 : 0.0)
+      gl.uniform1f(uMirror, mirrorRef.current ? 1.0 : 0.0)
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
       gl.bindTexture(gl.TEXTURE_2D, tex)
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video)
